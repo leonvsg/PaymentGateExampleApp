@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">PaymentGateExampleApp</string>
+    <string name="googlepay_status_unavailable" translatable="false">GPay не доступен для данного устройства</string>
+    <string name="googlepay_status_checking" translatable="false">Проверяем доступность GPay на устройстве</string>
+</resources>
