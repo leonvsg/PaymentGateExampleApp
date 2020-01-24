@@ -6,6 +6,7 @@ public class Constants {
     public final static String CARD__URL_END = "/rest/paymentorder.do";
     public final static String GOOGLE_PAY_PAYMENT_URL_END = "/google/payment.do";
     public final static String GET_ORDER_STATUS_URL_END = "/rest/getOrderStatusExtended.do";
+    public final static String SE_PUBLIC_KEY_URL_END = "/se/keys.do";
     public final static String ACS_REDIRECT_URL_END = "/acsRedirect.do";
     public final static String RETURN_URL = "http://localhost";
 
