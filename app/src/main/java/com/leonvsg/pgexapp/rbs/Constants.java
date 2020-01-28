@@ -13,17 +13,21 @@ public class Constants {
 
     public enum PaymentGateURI{
 
-        ALFABANK("https://web.rbsuat.com/ab", "UAT AB"),
-        SBERBANK("https://3dsec.sberbank.ru/payment", "UAT SBRF");
+        ALFABANK("https://web.rbsuat.com/ab", "UAT AB", "alfabank"),
+        SBERBANK("https://3dsec.sberbank.ru/payment", "UAT SBRF", "sberbank"),
+        OTHER("", "Другое", "rbs");
 
         private String uri;
         private String name;
-        PaymentGateURI(String uri, String name){
+        private String gPayGatewayId;
+        PaymentGateURI(String uri, String name, String gPayGatewayId){
             this.uri = uri;
             this.name = name;
+            this.gPayGatewayId = gPayGatewayId;
         }
         public String getURI(){ return uri;}
         public String getName(){ return name;}
+        public String getGPayGatewayId() { return gPayGatewayId; }
     }
 
     private Constants() {}

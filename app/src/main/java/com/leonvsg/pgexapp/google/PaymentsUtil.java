@@ -47,12 +47,12 @@ public class PaymentsUtil {
      * @see <a href=
      *     "https://developers.google.com/pay/api/android/reference/object#PaymentMethodTokenizationSpecification">PaymentMethodTokenizationSpecification</a>
      */
-    private static JSONObject getGatewayTokenizationSpecification() throws JSONException {
+    private static JSONObject getGatewayTokenizationSpecification(String gateway, String gatewayMerchantId) throws JSONException {
         return new JSONObject(){{
             put("type", "PAYMENT_GATEWAY");
             put("parameters", new JSONObject(){{
-                put("gateway", Constants.DEFAULT_PAYMENT_GATEWAY_TOKENIZATION_PARAMETERS.get("gateway"));
-                put("gatewayMerchantId", Constants.DEFAULT_PAYMENT_GATEWAY_TOKENIZATION_PARAMETERS.get("gatewayMerchantId"));
+                put("gateway", gateway);
+                put("gatewayMerchantId", gatewayMerchantId);
             }
             });
         }};
@@ -119,9 +119,9 @@ public class PaymentsUtil {
      * @see <a
      *     href="https://developers.google.com/pay/api/android/reference/object#PaymentMethod">PaymentMethod</a>
      */
-    private static JSONObject getCardPaymentMethod() throws JSONException {
+    private static JSONObject getCardPaymentMethod(String gateway, String gatewayMerchantId) throws JSONException {
         JSONObject cardPaymentMethod = getBaseCardPaymentMethod();
-        cardPaymentMethod.put("tokenizationSpecification", getGatewayTokenizationSpecification());
+        cardPaymentMethod.put("tokenizationSpecification", getGatewayTokenizationSpecification(gateway, gatewayMerchantId));
 
         return cardPaymentMethod;
     }
@@ -183,11 +183,11 @@ public class PaymentsUtil {
      * @see <a
      *     href="https://developers.google.com/pay/api/android/reference/object#PaymentDataRequest">PaymentDataRequest</a>
      */
-    public static Optional<JSONObject> getPaymentDataRequest(String price) {
+    public static Optional<JSONObject> getPaymentDataRequest(String price, String gateway, String gatewayMerchantId) {
         try {
             JSONObject paymentDataRequest = PaymentsUtil.getBaseRequest();
             paymentDataRequest.put(
-                    "allowedPaymentMethods", new JSONArray().put(PaymentsUtil.getCardPaymentMethod()));
+                    "allowedPaymentMethods", new JSONArray().put(PaymentsUtil.getCardPaymentMethod(gateway, gatewayMerchantId)));
             paymentDataRequest.put("transactionInfo", PaymentsUtil.getTransactionInfo(price));
             paymentDataRequest.put("merchantInfo", PaymentsUtil.getMerchantInfo());
 
