@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
     private LogAdapter logAdapter;
     private GPayClient gPayClient;
     private List<String> pgs;
-    private Constants.PaymentGateURI[] paymentgates = Constants.PaymentGateURI.values();
+    private Constants.PaymentGates[] paymentgates = Constants.PaymentGates.values();
     private Spinner mPaymentgateSpinner;
     private View mGooglePayButton;
     private TextView mGooglePayStatusText;
@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
         mPaymentgateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position >= paymentgates.length) {
+                if (position == paymentgates.length-1) {
                     mPaymentGateURIInput.setVisibility(View.VISIBLE);
                 } else {
                     mPaymentGateURIInput.setText(paymentgates[position].getURI());
@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
 
         String price = mAmountInput.getText().toString();
         String merchantLogin = mMerchantInput.getText().toString();
-        String gatewayId = Constants.PaymentGateURI.values()[mPaymentgateSpinner.getSelectedItemPosition()].getGPayGatewayId();
+        String gatewayId = Constants.PaymentGates.values()[mPaymentgateSpinner.getSelectedItemPosition()].getGPayGatewayId();
         String pgUri = mPaymentGateURIInput.getText().toString();
 
         switch (view.getId()) {

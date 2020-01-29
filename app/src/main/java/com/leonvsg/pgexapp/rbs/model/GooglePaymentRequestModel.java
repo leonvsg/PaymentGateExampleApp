@@ -2,16 +2,29 @@ package com.leonvsg.pgexapp.rbs.model;
 
 import com.leonvsg.pgexapp.rbs.Constants;
 
+/*
+Model
+
+{
+    "merchant": "sup_test",
+    "orderNumber": "orderNumber",
+    "returnUrl": "https://google.com",
+    "paymentToken": "eyJzaWduYXR1cmUiOiJNRVlUk9",
+    "amount" : "24000",
+    "currencyCode" : 643
+}
+ */
+
 public class GooglePaymentRequestModel {
 
     private String merchant;
     private String orderNumber;
     private String returnUrl;
     private String paymentToken;
-    private String amount;
-    private String currencyCode;
+    private Integer amount;
+    private Integer currencyCode;
 
-    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, String amount) {
+    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, Integer amount) {
         this.merchant = merchant;
         this.orderNumber = orderNumber;
         this.paymentToken = paymentToken;
@@ -36,11 +49,11 @@ public class GooglePaymentRequestModel {
         return paymentToken;
     }
 
-    public String getAmount() {
+    public Integer getAmount() {
         return amount;
     }
 
-    public String getCurrencyCode() {
+    public Integer getCurrencyCode() {
         return currencyCode;
     }
 

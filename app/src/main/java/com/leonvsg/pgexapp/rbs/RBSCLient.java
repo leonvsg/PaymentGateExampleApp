@@ -6,7 +6,7 @@ import com.leonvsg.pgexapp.rbs.model.RegisterOrderResponseModel;
 public class RBSCLient {
 
     public RegisterOrderResponseModel registerOrder(RegisterOrderRequestModel request) {
-        RegisterOrderResponseModel registerOrderResponseModel = new RegisterOrderResponseModel(null, null, null, null);
+        RegisterOrderResponseModel registerOrderResponseModel = new RegisterOrderResponseModel();
         return registerOrderResponseModel;
     }
 }

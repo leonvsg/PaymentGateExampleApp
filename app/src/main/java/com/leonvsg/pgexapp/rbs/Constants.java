@@ -9,9 +9,9 @@ public class Constants {
     public final static String SE_PUBLIC_KEY_URL_END = "/se/keys.do";
     public final static String ACS_REDIRECT_URL_END = "/acsRedirect.do";
     public final static String RETURN_URL = "http://localhost";
-    public final static String CURRENCY_CODE = "643";
+    public final static Integer CURRENCY_CODE = 643;
 
-    public enum PaymentGateURI{
+    public enum PaymentGates {
 
         ALFABANK("https://web.rbsuat.com/ab", "UAT AB", "alfabank"),
         SBERBANK("https://3dsec.sberbank.ru/payment", "UAT SBRF", "sberbank"),
@@ -20,7 +20,7 @@ public class Constants {
         private String uri;
         private String name;
         private String gPayGatewayId;
-        PaymentGateURI(String uri, String name, String gPayGatewayId){
+        PaymentGates(String uri, String name, String gPayGatewayId){
             this.uri = uri;
             this.name = name;
             this.gPayGatewayId = gPayGatewayId;
