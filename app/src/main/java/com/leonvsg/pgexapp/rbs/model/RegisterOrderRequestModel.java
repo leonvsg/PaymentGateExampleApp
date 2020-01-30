@@ -4,13 +4,13 @@ import com.leonvsg.pgexapp.rbs.Constants;
 
 public class RegisterOrderRequestModel {
 
-    private int amount;
+    private String amount;
     private String userName;
     private String password;
     private String orderNumber;
     private String returnUrl;
 
-    public RegisterOrderRequestModel(int amount, String userName, String password, String orderNumber) {
+    public RegisterOrderRequestModel(String amount, String userName, String password, String orderNumber) {
         this.amount = amount;
         this.userName = userName;
         this.password = password;
@@ -18,7 +18,7 @@ public class RegisterOrderRequestModel {
         this.returnUrl = Constants.RETURN_URL;
     }
 
-    public int getAmount() {
+    public String getAmount() {
         return amount;
     }
 

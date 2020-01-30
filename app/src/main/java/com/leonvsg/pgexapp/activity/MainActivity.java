@@ -2,6 +2,7 @@ package com.leonvsg.pgexapp.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -27,6 +28,9 @@ import com.leonvsg.pgexapp.adapter.LogAdapter;
 import com.leonvsg.pgexapp.google.GPayClient;
 import com.leonvsg.pgexapp.model.LogEntry;
 import com.leonvsg.pgexapp.rbs.Constants;
+import com.leonvsg.pgexapp.rbs.RBSClient;
+import com.leonvsg.pgexapp.rbs.model.RegisterOrderRequestModel;
+import com.leonvsg.pgexapp.rbs.model.RegisterOrderResponseModel;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +49,8 @@ public class MainActivity extends Activity {
 
     private LogAdapter logAdapter;
     private GPayClient gPayClient;
+    private RBSClient rbsClient;
+
     private List<String> pgs;
     private Constants.PaymentGates[] paymentgates = Constants.PaymentGates.values();
     private Spinner mPaymentgateSpinner;
@@ -57,17 +63,26 @@ public class MainActivity extends Activity {
     private Button mCardPayButton;
     private RecyclerView mLogRecyclerView;
     private ExtendedFloatingActionButton mShareButton;
+    private Dialog loadDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        loadDialog = new Dialog(this);
+        loadDialog.setCanceledOnTouchOutside(false);
+        loadDialog.setContentView(R.layout.loader);
+        loadDialog.show();
+
         gPayClient = new GPayClient(this);
         logAdapter = new LogAdapter();
+        rbsClient = new RBSClient();
 
         initUi();
         possiblyShowGooglePayButton();
+
+        loadDialog.dismiss();
     }
 
     private void initUi() {
@@ -83,11 +98,14 @@ public class MainActivity extends Activity {
         mShareButton = findViewById(R.id.share);
 
         initSpinner();
+
         mGooglePayButton.setOnClickListener(this::requestPayment);
         mCardPayButton.setOnClickListener(this::requestPayment);
         mShareButton.setOnClickListener(this::shareLog);
+
         mLogRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mLogRecyclerView.setAdapter(logAdapter);
+        logAdapter.setItem(new LogEntry(new Date(), "Логи взаимодействия систем", null));
     }
 
     private void initSpinner() {
@@ -149,30 +167,33 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    private void changeButtonClickable(boolean clickable) {
+    private void setButtonClickable(boolean clickable) {
         mCardPayButton.setClickable(clickable);
         mGooglePayButton.setClickable(clickable);
     }
 
     private void requestPayment(View view) {
-        changeButtonClickable(false);
+        setButtonClickable(false);
 
         if (!paramValidate()) {
-            changeButtonClickable(true);
+            setButtonClickable(true);
             return;
         }
+
+        loadDialog.show();
 
         String price = mAmountInput.getText().toString();
         String merchantLogin = mMerchantInput.getText().toString();
         String gatewayId = Constants.PaymentGates.values()[mPaymentgateSpinner.getSelectedItemPosition()].getGPayGatewayId();
         String pgUri = mPaymentGateURIInput.getText().toString();
+        String password = mPasswordInput.getText().toString();
 
         switch (view.getId()) {
             case R.id.googlepay_button:
                 runGPay(gatewayId, merchantLogin, price);
                 break;
             case R.id.cardpay_button:
-                runCardChooserActivity(pgUri+Constants.SE_PUBLIC_KEY_URL_END, Long.toString(new Date().getTime()),"Оплатить");
+                runCardPayment(pgUri, price, merchantLogin+"-api", password);
         }
     }
 
@@ -181,15 +202,24 @@ public class MainActivity extends Activity {
         logAdapter.setItem(new LogEntry(new Date(), "Запрос в Google на получение токена (paymentDataRequest)", paymentDataRequest.toString()));
     }
 
-    private void runCardChooserActivity(String publicKey, String mdOrder, String finishBtnText) {
-
+    private void runCardPayment(String pgUri, String amount, String userName, String password) {
+        String mdOrder = "";
+        try {
+            RegisterOrderRequestModel request = new RegisterOrderRequestModel(amount, userName, password, Long.toString(new Date().getTime()));
+            logAdapter.setItem(new LogEntry(new Date(), "Регистрируем заказ в платежном шлюзе", request.toString()));
+            RegisterOrderResponseModel response = rbsClient.registerOrder(request, pgUri);
+            logAdapter.setItem(new LogEntry(new Date(), "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
+            mdOrder = response.getOrderId();
+        } catch (Exception e) {
+            logAdapter.setItem(new LogEntry(new Date(), "Что-то пошло не так", e.toString()));
+        }
         // Создание интента CardChooserActivity
         Intent intent = new Intent(getApplicationContext(), CardChooserActivity.class);
 
         // Установка параметров
-        intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, publicKey);
+        intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, pgUri+Constants.SE_PUBLIC_KEY_URL_END);
         intent.putExtra(CardChooserActivity.EXTRA_MD_ORDER, mdOrder);
-        intent.putExtra(CardChooserActivity.EXTRA_FINISH_BTN_TEXT, finishBtnText);
+        intent.putExtra(CardChooserActivity.EXTRA_FINISH_BTN_TEXT, "Оплатить");
 
         // Запуск CardChooserActivity
         startActivityForResult(intent, CARD_CHOOSER_RESULT_CODE);
@@ -224,6 +254,8 @@ public class MainActivity extends Activity {
                     logAdapter.setItem(new LogEntry(new Date(), "От SDK получена криптограмма", new String(cryptogram)));
                 }
         }
+        setButtonClickable(true);
+        loadDialog.dismiss();
     }
 
     private void handlePaymentSuccess(PaymentData paymentData) {
