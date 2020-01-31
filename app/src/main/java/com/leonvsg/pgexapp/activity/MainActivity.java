@@ -193,7 +193,7 @@ public class MainActivity extends Activity {
                 runGPay(gatewayId, merchantLogin, price);
                 break;
             case R.id.cardpay_button:
-                runCardPayment(pgUri, price, merchantLogin+"-api", password);
+                registerOrder(pgUri, price, merchantLogin+"-api", password);
         }
     }
 
@@ -202,23 +202,25 @@ public class MainActivity extends Activity {
         logAdapter.setItem(new LogEntry(new Date(), "Запрос в Google на получение токена (paymentDataRequest)", paymentDataRequest.toString()));
     }
 
-    private void runCardPayment(String pgUri, String amount, String userName, String password) {
-        String mdOrder = "";
+    private void registerOrder(String pgUri, String amount, String userName, String password) {
         try {
             RegisterOrderRequestModel request = new RegisterOrderRequestModel(amount, userName, password, Long.toString(new Date().getTime()));
             logAdapter.setItem(new LogEntry(new Date(), "Регистрируем заказ в платежном шлюзе", request.toString()));
-            RegisterOrderResponseModel response = rbsClient.registerOrder(request, pgUri);
-            logAdapter.setItem(new LogEntry(new Date(), "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
-            mdOrder = response.getOrderId();
+            rbsClient.registerOrder(request, pgUri, response->runCardChooserActivity(response, pgUri));
         } catch (Exception e) {
             logAdapter.setItem(new LogEntry(new Date(), "Что-то пошло не так", e.toString()));
         }
+    }
+
+    private void runCardChooserActivity(RegisterOrderResponseModel response, String pgUri){
+        //logAdapter.setItem(new LogEntry(new Date(), "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
+
         // Создание интента CardChooserActivity
         Intent intent = new Intent(getApplicationContext(), CardChooserActivity.class);
 
         // Установка параметров
         intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, pgUri+Constants.SE_PUBLIC_KEY_URL_END);
-        intent.putExtra(CardChooserActivity.EXTRA_MD_ORDER, mdOrder);
+        intent.putExtra(CardChooserActivity.EXTRA_MD_ORDER, response.getOrderId());
         intent.putExtra(CardChooserActivity.EXTRA_FINISH_BTN_TEXT, "Оплатить");
 
         // Запуск CardChooserActivity
