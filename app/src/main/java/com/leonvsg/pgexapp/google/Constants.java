@@ -17,7 +17,6 @@ public class Constants {
                     "CRYPTOGRAM_3DS");
     public static final String COUNTRY_CODE = "RU";
     public static final String CURRENCY_CODE = "RUB";
-    public static final List<String> SHIPPING_SUPPORTED_COUNTRIES = Arrays.asList("RU");
     public static final String DEFAULT_PAYMENT_GATEWAY_TOKENIZATION_NAME = "alfabank";
     public static final String DEFAULT_PAYMENT_GATEWAY_TOKENIZATION_MERCHANT_ID = "sup_test";
 

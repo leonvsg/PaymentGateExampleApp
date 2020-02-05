@@ -21,10 +21,10 @@ public class GooglePaymentRequestModel {
     private String orderNumber;
     private String returnUrl;
     private String paymentToken;
-    private Integer amount;
+    private String amount;
     private Integer currencyCode;
 
-    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, Integer amount) {
+    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, String amount) {
         this.merchant = merchant;
         this.orderNumber = orderNumber;
         this.paymentToken = paymentToken;
@@ -49,7 +49,7 @@ public class GooglePaymentRequestModel {
         return paymentToken;
     }
 
-    public Integer getAmount() {
+    public String getAmount() {
         return amount;
     }
 

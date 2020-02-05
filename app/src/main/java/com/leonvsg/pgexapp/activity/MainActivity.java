@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,9 +29,7 @@ import com.leonvsg.pgexapp.google.GPayClient;
 import com.leonvsg.pgexapp.model.LogEntry;
 import com.leonvsg.pgexapp.rbs.Constants;
 import com.leonvsg.pgexapp.rbs.RBSClient;
-import com.leonvsg.pgexapp.rbs.model.PaymentOrderRequestModel;
 import com.leonvsg.pgexapp.rbs.model.PaymentOrderResponseModel;
-import com.leonvsg.pgexapp.rbs.model.RegisterOrderRequestModel;
 import com.leonvsg.pgexapp.rbs.model.RegisterOrderResponseModel;
 
 import org.json.JSONException;
@@ -48,7 +45,7 @@ import ru.rbs.mobile.cardchooser.CardChooserActivity;
 public class MainActivity extends Activity {
 
     private static final int LOAD_PAYMENT_DATA_RESULT_CODE = 0;
-    private static final int CARD_CHOOSER_RESULT_CODE = 1;
+    private static final int CARD_FORM_RESULT_CODE = 1;
     private static final int WEB_VIEW_RESULT_CODE = 2;
 
     private LogAdapter logAdapter;
@@ -68,21 +65,18 @@ public class MainActivity extends Activity {
     private ExtendedFloatingActionButton mShareButton;
     private Dialog loadDialog;
 
-    private String mdOrder;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         loadDialog = new Dialog(this);
         loadDialog.setCanceledOnTouchOutside(false);
+        loadDialog.setCancelable(false);
         loadDialog.setContentView(R.layout.loader);
         loadDialog.show();
 
         gPayClient = new GPayClient(this);
         logAdapter = new LogAdapter();
-        rbsClient = new RBSClient();
 
         initUi();
         possiblyShowGooglePayButton();
@@ -91,6 +85,7 @@ public class MainActivity extends Activity {
     }
 
     private void initUi() {
+        setContentView(R.layout.activity_main);
         mMerchantInput = findViewById(R.id.merchant_login);
         mPasswordInput = findViewById(R.id.api_password);
         mAmountInput = findViewById(R.id.amount);
@@ -199,37 +194,44 @@ public class MainActivity extends Activity {
 
         loadDialog.show();
 
-        String price = mAmountInput.getText().toString();
+        Constants.PaymentGates paymentGate = Constants.PaymentGates.values()[mPaymentgateSpinner.getSelectedItemPosition()];
+        String orderNumber = Long.toString(new Date().getTime());
         String merchantLogin = mMerchantInput.getText().toString();
-        String gatewayId = Constants.PaymentGates.values()[mPaymentgateSpinner.getSelectedItemPosition()].getGPayGatewayId();
-        String pgUri = mPaymentGateURIInput.getText().toString();
         String password = mPasswordInput.getText().toString();
+        String amount = mAmountInput.getText().toString();
+
+        if (mPaymentgateSpinner.getSelectedItemPosition() == paymentgates.length-1) {
+            rbsClient = new RBSClient(paymentGate, orderNumber, merchantLogin, password, amount,
+                    mPaymentGateURIInput.getText().toString());
+        } else {
+            rbsClient = new RBSClient(paymentGate, orderNumber, merchantLogin, password, amount);
+        }
 
         switch (view.getId()) {
             case R.id.googlepay_button:
-                runGPay(gatewayId, merchantLogin, price);
+                runGooglePayment();
                 break;
             case R.id.cardpay_button:
-                registerOrder(pgUri, price, merchantLogin+"-api", password);
+                runCardPayment();
         }
     }
 
-    private void runGPay(String gatewayId, String merchantLogin, String price) {
-        JSONObject paymentDataRequest = gPayClient.loadPaymentData(gatewayId, merchantLogin, price, LOAD_PAYMENT_DATA_RESULT_CODE);
+    private void runGooglePayment() {
+        JSONObject paymentDataRequest = gPayClient.loadPaymentData(rbsClient.getPaymentGate().getGPayGatewayId(),
+                rbsClient.getMerchantLogin(), rbsClient.getAmount(), LOAD_PAYMENT_DATA_RESULT_CODE);
         addLogEntry("Запрос в Google на получение токена (paymentDataRequest)", paymentDataRequest.toString());
     }
 
-    private void registerOrder(String pgUri, String amount, String userName, String password) {
+    private void runCardPayment(){
         try {
-            RegisterOrderRequestModel request = new RegisterOrderRequestModel(amount, userName, password, Long.toString(new Date().getTime()));
-            addLogEntry("Регистрируем заказ в платежном шлюзе", request.toString() + "; URL: " + pgUri+Constants.REGISTER_ORDER_URL_END);
-            rbsClient.registerOrder(request, pgUri, response->runCardChooserActivity(response, pgUri));
+            rbsClient.registerOrder(this::handleRegisterOrder);
+            addLogEntry("Регистрируем заказ в платежном шлюзе", rbsClient.getRegisterOrderRequest() + "; URL: " + rbsClient.getRegisterOrderUrl());
         } catch (Exception e) {
             addLogEntry( "Что-то пошло не так", e.toString());
         }
     }
 
-    private void runCardChooserActivity(RegisterOrderResponseModel response, String pgUri){
+    private void handleRegisterOrder(RegisterOrderResponseModel response){
         if (response == null) {
             mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.", "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
             setButtonClickable(true);
@@ -237,25 +239,14 @@ public class MainActivity extends Activity {
             return;
         }
         mLogRecyclerView.post(()->addLogEntry( "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
-
-        mdOrder = response.getOrderId();
-
-        // Создание интента CardChooserActivity
-        Intent intent = new Intent(getApplicationContext(), CardChooserActivity.class);
-
-        // Установка параметров
-        intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, pgUri+Constants.SE_PUBLIC_KEY_URL_END);
-        intent.putExtra(CardChooserActivity.EXTRA_MD_ORDER, mdOrder);
-        intent.putExtra(CardChooserActivity.EXTRA_FINISH_BTN_TEXT, "Оплатить");
-
-        // Запуск CardChooserActivity
-        startActivityForResult(intent, CARD_CHOOSER_RESULT_CODE);
+        mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
+                "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublickKeysUrl()));
+        rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            // value passed in AutoResolveHelper
             case LOAD_PAYMENT_DATA_RESULT_CODE:
                 switch (resultCode) {
                     case Activity.RESULT_OK:
@@ -271,30 +262,25 @@ public class MainActivity extends Activity {
                         Status status = AutoResolveHelper.getStatusFromIntent(data);
                         handleError(status.getStatusCode());
                         break;
-                    default:
-                        // Do nothing.
                 }
                 break;
-            case CARD_CHOOSER_RESULT_CODE:
+            case CARD_FORM_RESULT_CODE:
                 if(data != null && data.hasExtra(CardChooserActivity.EXTRA_RESULT))  {
                     String cryptogram = new String(data.getByteArrayExtra(CardChooserActivity.EXTRA_RESULT));
                     cryptogram = cryptogram.replace("\n", "");
                     addLogEntry("От SDK получена криптограмма", cryptogram);
-                    String merchantLogin = mMerchantInput.getText().toString();
-                    String pgUri = mPaymentGateURIInput.getText().toString();
-                    String password = mPasswordInput.getText().toString();
-                    PaymentOrderRequestModel request = new PaymentOrderRequestModel(merchantLogin+"-api", password, mdOrder, cryptogram, "SUPPORT TEST");
-                    addLogEntry("Оплачиваем заказ в платежном шлюзе", request.toString() + "; URL: " + pgUri+Constants.CARD_PAYMENT_URL_END);
-                    rbsClient.paymentOrder(request, pgUri, (response)->handleCardPayment(response, pgUri));
+                    rbsClient.paymentOrder(cryptogram, this::handlePaymentOrder);
+                    addLogEntry("Оплачиваем заказ в платежном шлюзе",
+                            rbsClient.getPaymentOrderRequest() + "; URL: " + rbsClient.getPaymentOrderUrl());
                 }
                 break;
             case WEB_VIEW_RESULT_CODE:
-                //handle webView result
+                addLogEntry("Вернулись с ACS", "");
                 break;
         }
     }
 
-    private void handleCardPayment(PaymentOrderResponseModel response, String pgUri){
+    private void handlePaymentOrder(PaymentOrderResponseModel response){
         if (response == null) {
             mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.", "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
             setButtonClickable(true);
@@ -302,11 +288,8 @@ public class MainActivity extends Activity {
             return;
         }
         mLogRecyclerView.post(()->addLogEntry( "Ответ метода оплаты заказа в платежном шлюзе", response.toString()));
-        String acsRedirectUrl = rbsClient.getACSRedirectUrl(pgUri, mdOrder);
-        mLogRecyclerView.post(()->addLogEntry( "Перенаправоляем на ACS: ", acsRedirectUrl));
-        Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
-        intent.setData(Uri.parse(acsRedirectUrl));
-        startActivityForResult(intent, WEB_VIEW_RESULT_CODE);
+        mLogRecyclerView.post(()->addLogEntry( "Перенаправляем на ACS: ", rbsClient.getACSRedirectUrl()));
+        rbsClient.redirectToAcs(this, WEB_VIEW_RESULT_CODE);
         setButtonClickable(true);
         loadDialog.dismiss();
     }
@@ -314,7 +297,6 @@ public class MainActivity extends Activity {
     private void handleGooglePayment(PaymentData paymentData) {
         String paymentInformation = paymentData.toJson();
 
-        // Token will be null if PaymentDataRequest was not constructed using fromJson(String).
         if (paymentInformation == null) {
             return;
         }

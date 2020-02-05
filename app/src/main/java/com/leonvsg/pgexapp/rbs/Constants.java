@@ -10,6 +10,7 @@ public class Constants {
     public final static String ACS_REDIRECT_URL_END = "/acsRedirect.do";
     public final static String RETURN_URL = "http://localhost";
     public final static Integer CURRENCY_CODE = 643;
+    public final static String DEFAULT_CARDHOLDER_NAME = "Card Holder";
 
     public enum PaymentGates {
 
