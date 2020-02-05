@@ -1,35 +1,18 @@
 package com.leonvsg.pgexapp.rbs.model;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
 public class GetOrderStatusExtendedRequestModel {
 
-    private String userName;
-    private String password;
-    private String orderId;
+    @Getter private String userName;
+    @Getter private String password;
+    @Getter private String orderId;
 
     public GetOrderStatusExtendedRequestModel(String userName, String password, String orderId) {
         this.userName = userName;
         this.password = password;
         this.orderId = orderId;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getOrderId() {
-        return orderId;
-    }
-
-    @Override
-    public String toString() {
-        return "GetOrderStatusRequestModel{" +
-                "userName='" + userName + '\'' +
-                ", password='" + password + '\'' +
-                ", orderId='" + orderId + '\'' +
-                '}';
     }
 }

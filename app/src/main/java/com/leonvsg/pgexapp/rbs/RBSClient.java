@@ -7,6 +7,8 @@ import android.net.Uri;
 import com.alibaba.fastjson.JSON;
 
 import com.leonvsg.pgexapp.activity.WebViewActivity;
+import com.leonvsg.pgexapp.rbs.model.GetOrderStatusExtendedRequestModel;
+import com.leonvsg.pgexapp.rbs.model.GetOrderStatusExtendedResponseModel;
 import com.leonvsg.pgexapp.rbs.model.GooglePaymentRequestModel;
 import com.leonvsg.pgexapp.rbs.model.GooglePaymentResponseModel;
 import com.leonvsg.pgexapp.rbs.model.PaymentOrderRequestModel;
@@ -18,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import lombok.Getter;
 import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.MediaType;
@@ -32,29 +35,31 @@ public class RBSClient {
 
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json");
     private OkHttpClient httpClient;
-    private String paymentGateURI;
-    private String orderNumber;
-    private String merchantLogin;
-    private String apiUserNameLogin;
-    private String password;
-    private String amount;
-    private String mdOrder;
-    private Constants.PaymentGates paymentGate;
+    @Getter private String paymentGateURI;
+    @Getter private String orderNumber;
+    @Getter private String merchantLogin;
+    @Getter private String apiUserNameLogin;
+    @Getter private String password;
+    @Getter private String amount;
+    @Getter private String mdOrder;
+    @Getter private Constants.PaymentGates paymentGate;
 
-    private String registerOrderUrl;
-    private String paymentOrderUrl;
-    private String googlePaymentUrl;
-    private String getOrderStatusUrl;
-    private String sePublickKeysUrl;
+    @Getter private String registerOrderUrl;
+    @Getter private String paymentOrderUrl;
+    @Getter private String googlePaymentUrl;
+    @Getter private String getOrderStatusExtendedUrl;
+    @Getter private String sePublicKeysUrl;
 
-    private RegisterOrderRequestModel registerOrderRequest;
-    private RegisterOrderResponseModel registerOrderResponse;
-    private PaymentOrderRequestModel paymentOrderRequest;
-    private PaymentOrderResponseModel paymentOrderResponse;
-    private GooglePaymentRequestModel googlePaymentRequestModel;
-    private GooglePaymentResponseModel googlePaymentResponse;
+    @Getter private RegisterOrderRequestModel registerOrderRequest;
+    @Getter private RegisterOrderResponseModel registerOrderResponse;
+    @Getter private PaymentOrderRequestModel paymentOrderRequest;
+    @Getter private PaymentOrderResponseModel paymentOrderResponse;
+    @Getter private GooglePaymentRequestModel googlePaymentRequest;
+    @Getter private GooglePaymentResponseModel googlePaymentResponse;
+    @Getter private GetOrderStatusExtendedRequestModel getOrderStatusExtendedRequest;
+    @Getter private GetOrderStatusExtendedResponseModel getOrderStatusExtendedResponse;
 
-    public RBSClient() {
+    private RBSClient() {
         httpClient = new OkHttpClient();
     }
 
@@ -74,91 +79,15 @@ public class RBSClient {
         registerOrderUrl = paymentGateURI+Constants.REGISTER_ORDER_URL_END;
         paymentOrderUrl = paymentGateURI+Constants.CARD_PAYMENT_URL_END;
         googlePaymentUrl = paymentGateURI+Constants.GOOGLE_PAY_PAYMENT_URL_END;
-        getOrderStatusUrl = paymentGateURI+Constants.GET_ORDER_STATUS_URL_END;
-        sePublickKeysUrl = paymentGateURI+Constants.SE_PUBLIC_KEY_URL_END;
-    }
-
-    public String getPaymentGateURI() {
-        return paymentGateURI;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public String getMerchantLogin() {
-        return merchantLogin;
-    }
-
-    public String getApiUserNameLogin() {
-        return apiUserNameLogin;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getAmount() {
-        return amount;
-    }
-
-    public String getMdOrder() {
-        return mdOrder;
-    }
-
-    public Constants.PaymentGates getPaymentGate() {
-        return paymentGate;
-    }
-
-    public String getRegisterOrderUrl() {
-        return registerOrderUrl;
-    }
-
-    public String getPaymentOrderUrl() {
-        return paymentOrderUrl;
-    }
-
-    public String getGooglePaymentUrl() {
-        return googlePaymentUrl;
-    }
-
-    public String getGetOrderStatusUrl() {
-        return getOrderStatusUrl;
-    }
-
-    public String getSePublickKeysUrl() {
-        return sePublickKeysUrl;
-    }
-
-    public RegisterOrderRequestModel getRegisterOrderRequest() {
-        return registerOrderRequest;
-    }
-
-    public RegisterOrderResponseModel getRegisterOrderResponse() {
-        return registerOrderResponse;
-    }
-
-    public PaymentOrderRequestModel getPaymentOrderRequest() {
-        return paymentOrderRequest;
-    }
-
-    public PaymentOrderResponseModel getPaymentOrderResponse() {
-        return paymentOrderResponse;
-    }
-
-    public GooglePaymentRequestModel getGooglePaymentRequestModel() {
-        return googlePaymentRequestModel;
-    }
-
-    public GooglePaymentResponseModel getGooglePaymentResponse() {
-        return googlePaymentResponse;
+        getOrderStatusExtendedUrl = paymentGateURI+Constants.GET_ORDER_STATUS_URL_END;
+        sePublicKeysUrl = paymentGateURI+Constants.SE_PUBLIC_KEY_URL_END;
     }
 
     public String getACSRedirectUrl(){
         return getACSRedirectUrl(mdOrder);
     }
 
-    public String getACSRedirectUrl(String mdOrder){
+    private String getACSRedirectUrl(String mdOrder){
         return paymentGateURI+Constants.ACS_REDIRECT_URL_END+"?orderId="+mdOrder;
     }
 
@@ -167,7 +96,7 @@ public class RBSClient {
         registerOrder(registerOrderRequest, callback);
     }
 
-    public void registerOrder(RegisterOrderRequestModel requestModel, Callback<RegisterOrderResponseModel> callback) {
+    private void registerOrder(RegisterOrderRequestModel requestModel, Callback<RegisterOrderResponseModel> callback) {
         RequestBody requestBody = new FormBody.Builder()
                 .add("orderNumber", requestModel.getOrderNumber())
                 .add("userName", requestModel.getUserName())
@@ -204,7 +133,7 @@ public class RBSClient {
         paymentOrder(paymentOrderRequest, callback);
     }
 
-    public void paymentOrder(PaymentOrderRequestModel requestModel, Callback<PaymentOrderResponseModel> callback) {
+    private void paymentOrder(PaymentOrderRequestModel requestModel, Callback<PaymentOrderResponseModel> callback) {
         RequestBody requestBody = new FormBody.Builder()
                 .add("MDORDER", requestModel.getMDORDER())
                 .add("userName", requestModel.getUserName())
@@ -235,11 +164,11 @@ public class RBSClient {
     }
 
     public void googlePayment(String paymentToken, Callback<GooglePaymentResponseModel> callback){
-        googlePaymentRequestModel = new GooglePaymentRequestModel(merchantLogin, orderNumber, paymentToken, amount);
-        googlePayment(googlePaymentRequestModel, callback);
+        googlePaymentRequest = new GooglePaymentRequestModel(merchantLogin, orderNumber, paymentToken, amount);
+        googlePayment(googlePaymentRequest, callback);
     }
 
-    public void googlePayment(GooglePaymentRequestModel requestModel, Callback<GooglePaymentResponseModel> callback){
+    private void googlePayment(GooglePaymentRequestModel requestModel, Callback<GooglePaymentResponseModel> callback){
         RequestBody body = RequestBody.create(JSON.toJSONString(requestModel), JSON_MEDIA_TYPE);
         Request request = new Request.Builder()
                 .url(googlePaymentUrl)
@@ -264,15 +193,40 @@ public class RBSClient {
         });
     }
 
-    public void getOrderStatus(){
+    public void getOrderStatus(Callback<GetOrderStatusExtendedResponseModel> callback){
+        getOrderStatusExtendedRequest = new GetOrderStatusExtendedRequestModel(apiUserNameLogin, password, mdOrder);
+        getOrderStatus(getOrderStatusExtendedRequest, callback);
+    }
 
+    private void getOrderStatus(GetOrderStatusExtendedRequestModel requestModel, Callback<GetOrderStatusExtendedResponseModel> callback){
+        RequestBody requestBody = new FormBody.Builder()
+                .add("orderId", requestModel.getOrderId())
+                .add("userName", requestModel.getUserName())
+                .add("password", requestModel.getPassword())
+                .build();
+        Request request = new Request.Builder()
+                .url(getOrderStatusExtendedUrl)
+                .post(requestBody)
+                .build();
+        httpClient.newCall(request).enqueue(new okhttp3.Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                callback.execute(null);
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
+                try {
+                    getOrderStatusExtendedResponse = JSON.parseObject(response.body().string(), GetOrderStatusExtendedResponseModel.class);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                callback.execute(getOrderStatusExtendedResponse);
+            }
+        });
     }
 
     public void redirectToAcs(Activity context, int resultCode){
-        redirectToAcs(context, resultCode, mdOrder);
-    }
-
-    public void redirectToAcs(Activity context, int resultCode, String mdOrder){
         Intent intent = new Intent(context, WebViewActivity.class);
         intent.setData(Uri.parse(getACSRedirectUrl(mdOrder)));
         context.startActivityForResult(intent, resultCode);

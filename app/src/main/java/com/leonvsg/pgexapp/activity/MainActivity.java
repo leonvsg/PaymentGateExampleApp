@@ -29,6 +29,7 @@ import com.leonvsg.pgexapp.google.GPayClient;
 import com.leonvsg.pgexapp.model.LogEntry;
 import com.leonvsg.pgexapp.rbs.Constants;
 import com.leonvsg.pgexapp.rbs.RBSClient;
+import com.leonvsg.pgexapp.rbs.model.GetOrderStatusExtendedResponseModel;
 import com.leonvsg.pgexapp.rbs.model.PaymentOrderResponseModel;
 import com.leonvsg.pgexapp.rbs.model.RegisterOrderResponseModel;
 
@@ -213,6 +214,7 @@ public class MainActivity extends Activity {
                 break;
             case R.id.cardpay_button:
                 runCardPayment();
+                break;
         }
     }
 
@@ -233,15 +235,22 @@ public class MainActivity extends Activity {
 
     private void handleRegisterOrder(RegisterOrderResponseModel response){
         if (response == null) {
-            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.", "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
+            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.",
+                    "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
             setButtonClickable(true);
             loadDialog.dismiss();
             return;
         }
         mLogRecyclerView.post(()->addLogEntry( "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
-        mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
-                "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublickKeysUrl()));
-        rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
+        if (response.getOrderId() == null) {
+            mLogRecyclerView.post(()->Toast.makeText(getApplicationContext(), "Ошибка регистрации заказа: "+response.getErrorMessage(), Toast.LENGTH_LONG).show());
+            setButtonClickable(true);
+            loadDialog.dismiss();
+        } else {
+            mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
+                    "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublicKeysUrl()));
+            rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
+        }
     }
 
     @Override
@@ -255,8 +264,7 @@ public class MainActivity extends Activity {
                         handleGooglePayment(paymentData);
                         break;
                     case Activity.RESULT_CANCELED:
-                        // Nothing to here normally - the user simply cancelled without selecting a
-                        // payment method.
+                        // Nothing to here normally - the user simply cancelled without payment
                         break;
                     case AutoResolveHelper.RESULT_ERROR:
                         Status status = AutoResolveHelper.getStatusFromIntent(data);
@@ -275,23 +283,58 @@ public class MainActivity extends Activity {
                 }
                 break;
             case WEB_VIEW_RESULT_CODE:
-                addLogEntry("Вернулись с ACS", "");
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        addLogEntry("Вернулись с ACS", "");
+                        getOrderStatusExtended();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        // Nothing to here normally - the user simply cancelled without payment
+                        break;
+                    case AutoResolveHelper.RESULT_ERROR:
+
+                        break;
+                }
+                setButtonClickable(true);
+                loadDialog.dismiss();
                 break;
         }
     }
 
+    private void getOrderStatusExtended(){
+        rbsClient.getOrderStatus(this::handleGetOrderStatusExtended);
+        addLogEntry("Запрашиваем статус платежа",
+                rbsClient.getGetOrderStatusExtendedRequest() + "; URL: " + rbsClient.getGetOrderStatusExtendedUrl());
+    }
+
+    private void handleGetOrderStatusExtended(GetOrderStatusExtendedResponseModel response){
+        if (response == null) {
+            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.",
+                    "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
+            return;
+        }
+        mLogRecyclerView.post(()->addLogEntry( "Ответ метода getOrderStatusExtended", response.toString()));
+    }
+
     private void handlePaymentOrder(PaymentOrderResponseModel response){
         if (response == null) {
-            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.", "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
+            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.",
+                    "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
             setButtonClickable(true);
             loadDialog.dismiss();
             return;
         }
         mLogRecyclerView.post(()->addLogEntry( "Ответ метода оплаты заказа в платежном шлюзе", response.toString()));
-        mLogRecyclerView.post(()->addLogEntry( "Перенаправляем на ACS: ", rbsClient.getACSRedirectUrl()));
-        rbsClient.redirectToAcs(this, WEB_VIEW_RESULT_CODE);
-        setButtonClickable(true);
-        loadDialog.dismiss();
+
+        if (response.getRedirect() != null || response.getErrorCode() != 0) {
+            mLogRecyclerView.post(()->Toast.makeText(getApplicationContext(), "Ошибка регистрации заказа: "+response.getErrorMessage(), Toast.LENGTH_LONG).show());
+            getOrderStatusExtended();
+            setButtonClickable(true);
+            loadDialog.dismiss();
+        } else {
+            mLogRecyclerView.post(()->addLogEntry( "Перенаправляем на ACS: ", rbsClient.getACSRedirectUrl()));
+            rbsClient.redirectToAcs(this, WEB_VIEW_RESULT_CODE);
+        }
     }
 
     private void handleGooglePayment(PaymentData paymentData) {

@@ -2,13 +2,17 @@ package com.leonvsg.pgexapp.rbs.model;
 
 import com.leonvsg.pgexapp.rbs.Constants;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
 public class RegisterOrderRequestModel {
 
-    private String amount;
-    private String userName;
-    private String password;
-    private String orderNumber;
-    private String returnUrl;
+    @Getter private String amount;
+    @Getter private String userName;
+    @Getter private String password;
+    @Getter private String orderNumber;
+    @Getter private String returnUrl;
 
     public RegisterOrderRequestModel(String amount, String userName, String password, String orderNumber) {
         this.amount = amount;
@@ -16,36 +20,5 @@ public class RegisterOrderRequestModel {
         this.password = password;
         this.orderNumber = orderNumber;
         this.returnUrl = Constants.RETURN_URL;
-    }
-
-    public String getAmount() {
-        return amount;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public String getReturnUrl() {
-        return returnUrl;
-    }
-
-    @Override
-    public String toString() {
-        return "RegisterOrderRequestModel{" +
-                "amount=" + amount +
-                ", userName='" + userName + '\'' +
-                ", password='" + password + '\'' +
-                ", orderNumber='" + orderNumber + '\'' +
-                ", returnUrl='" + returnUrl + '\'' +
-                '}';
     }
 }
