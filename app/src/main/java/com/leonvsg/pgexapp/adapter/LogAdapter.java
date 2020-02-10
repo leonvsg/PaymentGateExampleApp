@@ -13,8 +13,10 @@ import com.leonvsg.pgexapp.R;
 import com.leonvsg.pgexapp.model.LogEntry;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 public class LogAdapter extends RecyclerView.Adapter<LogAdapter.LogViewHolder> {
 
@@ -43,31 +45,19 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.LogViewHolder> {
         notifyDataSetChanged();
     }
 
-    public void setItems(Collection<LogEntry> logEntries) {
-        logList.addAll(logEntries);
-        notifyDataSetChanged();
-    }
-
-    public void clearItems() {
-        logList.clear();
-        notifyDataSetChanged();
-    }
-
     public List<LogEntry> getAll() {
         return logList;
     }
 
     class LogViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView mLogDate;
-        private TextView mLogHeader;
-        private TextView mLogText;
+        @BindView(R.id.log_date) TextView mLogDate;
+        @BindView(R.id.log_header) TextView mLogHeader;
+        @BindView(R.id.log_text) TextView mLogText;
 
         public LogViewHolder(@NonNull View itemView) {
             super(itemView);
-            mLogDate = itemView.findViewById(R.id.log_date);
-            mLogHeader = itemView.findViewById(R.id.log_header);
-            mLogText = itemView.findViewById(R.id.log_text);
+            ButterKnife.bind(this, itemView);
         }
 
         private void bind(LogEntry logEntry) {

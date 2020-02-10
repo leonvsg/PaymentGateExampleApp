@@ -4,9 +4,11 @@ import com.leonvsg.pgexapp.rbs.Constants;
 
 import lombok.Getter;
 import lombok.ToString;
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
 
 @ToString
-public class RegisterOrderRequestModel {
+public class RegisterOrderRequestModel implements RequestModel {
 
     @Getter private String amount;
     @Getter private String userName;
@@ -20,5 +22,16 @@ public class RegisterOrderRequestModel {
         this.password = password;
         this.orderNumber = orderNumber;
         this.returnUrl = Constants.RETURN_URL;
+    }
+
+    @Override
+    public RequestBody getRequestBody() {
+        return new FormBody.Builder()
+                .add("orderNumber", orderNumber)
+                .add("userName", userName)
+                .add("password", password)
+                .add("returnUrl", returnUrl)
+                .add("amount", amount)
+                .build();
     }
 }

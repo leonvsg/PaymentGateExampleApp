@@ -2,9 +2,11 @@ package com.leonvsg.pgexapp.rbs.model;
 
 import lombok.Getter;
 import lombok.ToString;
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
 
 @ToString
-public class PaymentOrderRequestModel {
+public class PaymentOrderRequestModel implements RequestModel {
 
     @Getter private String userName;
     @Getter private String password;
@@ -18,5 +20,16 @@ public class PaymentOrderRequestModel {
         this.MDORDER = MDORDER;
         this.seToken = seToken;
         this.TEXT = TEXT;
+    }
+
+    @Override
+    public RequestBody getRequestBody() {
+        return new FormBody.Builder()
+                .add("MDORDER", MDORDER)
+                .add("userName", userName)
+                .add("password", password)
+                .add("seToken", seToken)
+                .add("TEXT", TEXT)
+                .build();
     }
 }
