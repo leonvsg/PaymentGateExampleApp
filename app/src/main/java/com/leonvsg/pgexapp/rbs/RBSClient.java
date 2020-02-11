@@ -24,11 +24,8 @@ import java.io.IOException;
 
 import lombok.Getter;
 import okhttp3.Call;
-import okhttp3.FormBody;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import ru.rbs.mobile.cardchooser.CardChooserActivity;
@@ -94,78 +91,38 @@ public class RBSClient {
         return paymentGateURI+Constants.ACS_REDIRECT_URL_END+"?orderId="+mdOrder;
     }
 
-    public void registerOrder(Callback<RegisterOrderResponseModel> callback) {
+    public void registerOrder(Callback<RegisterOrderResponseModel> callback, ExceptionHandler exceptionHandler) {
         registerOrderRequest = new RegisterOrderRequestModel(amount, apiUserNameLogin, password, orderNumber);
-        executeRequest(registerOrderRequest, registerOrderUrl, (call, response, exception)->{
-            Log.d(TAG, response.toString());
-            if (exception != null) {
-                Log.w(TAG, exception);
-                callback.execute(null);
-                return;
-            }
-            try {
-                registerOrderResponse = JSON.parseObject(response.body().string(), RegisterOrderResponseModel.class);
-                mdOrder = registerOrderResponse.getOrderId();
-            } catch (Exception e) {
-                Log.w(TAG, e);
-            }
+        executeRequest(registerOrderRequest, registerOrderUrl, (response)->{
+            registerOrderResponse = JSON.parseObject(response.body().string(), RegisterOrderResponseModel.class);
+            mdOrder = registerOrderResponse.getOrderId();
             callback.execute(registerOrderResponse);
-        });
+        }, exceptionHandler);
     }
 
-    public void paymentOrder(String seToken, Callback<PaymentOrderResponseModel> callback){
+    public void paymentOrder(String seToken, Callback<PaymentOrderResponseModel> callback, ExceptionHandler exceptionHandler){
         paymentOrderRequest = new PaymentOrderRequestModel(apiUserNameLogin, password, mdOrder, seToken, Constants.DEFAULT_CARDHOLDER_NAME);
-        executeRequest(paymentOrderRequest, paymentOrderUrl, (call, response, exception)->{
-            Log.d(TAG, response.toString());
-            if (exception != null) {
-                Log.w(TAG, exception);
-                callback.execute(null);
-                return;
-            }
-            try {
-                paymentOrderResponse = JSON.parseObject(response.body().string(), PaymentOrderResponseModel.class);
-            } catch (Exception e) {
-                Log.w(TAG, e);
-            }
+        executeRequest(paymentOrderRequest, paymentOrderUrl, (response)->{
+            paymentOrderResponse = JSON.parseObject(response.body().string(), PaymentOrderResponseModel.class);
             callback.execute(paymentOrderResponse);
-        });
+        }, exceptionHandler);
     }
 
-    public void googlePayment(String paymentToken, Callback<GooglePaymentResponseModel> callback){
+    public void googlePayment(String paymentToken, Callback<GooglePaymentResponseModel> callback, ExceptionHandler exceptionHandler){
         googlePaymentRequest = new GooglePaymentRequestModel(merchantLogin, orderNumber, paymentToken, amount);
-        executeRequest(googlePaymentRequest, googlePaymentUrl, (call, response, exception)->{
-            Log.d(TAG, response.toString());
-            if (exception != null) {
-                Log.w(TAG, exception);
-                callback.execute(null);
-                return;
-            }
-            try {
-                googlePaymentResponse = JSON.parseObject(response.body().string(), GooglePaymentResponseModel.class);
-                mdOrder = googlePaymentResponse.getData().getOrderId();
-            } catch (Exception e) {
-                Log.w(TAG, e);
-            }
+        executeRequest(googlePaymentRequest, googlePaymentUrl, (response)->{
+            googlePaymentResponse = JSON.parseObject(response.body().string(), GooglePaymentResponseModel.class);
+            if (googlePaymentResponse.getData() != null) mdOrder = googlePaymentResponse.getData().getOrderId();
             callback.execute(googlePaymentResponse);
-        });
+        }, exceptionHandler);
     }
 
-    public void getOrderStatusExtended(Callback<GetOrderStatusExtendedResponseModel> callback){
+    public void getOrderStatusExtended(Callback<GetOrderStatusExtendedResponseModel> callback, ExceptionHandler exceptionHandler){
         getOrderStatusExtendedRequest = new GetOrderStatusExtendedRequestModel(apiUserNameLogin, password, mdOrder);
-        executeRequest(getOrderStatusExtendedRequest, getOrderStatusExtendedUrl, (call, response, exception)->{
-            Log.d(TAG, response.toString());
-            if (exception != null) {
-                Log.w(TAG, exception);
-                callback.execute(null);
-                return;
-            }
-            try {
-                getOrderStatusExtendedResponse = JSON.parseObject(response.body().string(), GetOrderStatusExtendedResponseModel.class);
-            } catch (Exception e) {
-                Log.w(TAG, e);
-            }
+        executeRequest(getOrderStatusExtendedRequest, getOrderStatusExtendedUrl, (response)->{
+            getOrderStatusExtendedResponse = JSON.parseObject(response.body().string(), GetOrderStatusExtendedResponseModel.class);
             callback.execute(getOrderStatusExtendedResponse);
-        });
+        }, exceptionHandler);
     }
 
     public void redirectToAcs(Activity context, int resultCode){
@@ -182,7 +139,7 @@ public class RBSClient {
         context.startActivityForResult(intent, resultCode);
     }
 
-    private void executeRequest(RequestModel requestModel, String url, ResponseHandler responseHandler){
+    private void executeRequest(RequestModel requestModel, String url, ResponseHandler responseHandler, ExceptionHandler exceptionHandler){
         Request request = new Request.Builder()
                 .url(url)
                 .post(requestModel.getRequestBody())
@@ -190,15 +147,21 @@ public class RBSClient {
         httpClient.newCall(request).enqueue(new okhttp3.Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                responseHandler.handle(call, null, e);
+                Log.w(TAG, e);
+                exceptionHandler.handle(e);
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) {
-                responseHandler.handle(call, response, null);
+                try {
+                    Log.d(TAG, response.toString());
+                    responseHandler.handle(response);
+                } catch (IOException e) {
+                    Log.w(TAG, e);
+                }
             }
         });
     }
 
-    private interface ResponseHandler{ void handle(Call call, Response response, IOException exception); }
+    private interface ResponseHandler{ void handle(Response response) throws IOException; }
 }

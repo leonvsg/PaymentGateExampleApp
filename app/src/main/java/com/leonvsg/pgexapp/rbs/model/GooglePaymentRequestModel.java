@@ -1,6 +1,5 @@
 package com.leonvsg.pgexapp.rbs.model;
 
-import com.alibaba.fastjson.JSON;
 import com.leonvsg.pgexapp.rbs.Constants;
 
 import lombok.Getter;
@@ -31,6 +30,9 @@ public class GooglePaymentRequestModel implements RequestModel {
 
     @Override
     public RequestBody getRequestBody() {
-        return RequestBody.create(JSON.toJSONString(this), JSON_MEDIA_TYPE);
+        String json = String.format(
+                "{\"merchant\":\"%s\",\"orderNumber\":\"%s\",\"returnUrl\":\"%s\",\"paymentToken\":\"%s\",\"amount\":\"%s\",\"currencyCode\":%d}",
+                merchant, orderNumber, returnUrl, paymentToken, amount, currencyCode);
+        return RequestBody.create(json, JSON_MEDIA_TYPE);
     }
 }
