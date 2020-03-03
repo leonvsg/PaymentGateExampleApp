@@ -155,7 +155,8 @@ public class RBSClient {
             public void onResponse(@NotNull Call call, @NotNull Response response) {
                 try {
                     Log.d(TAG, response.toString());
-                    responseHandler.handle(response);
+                    if (response.isSuccessful()) responseHandler.handle(response);
+                    else exceptionHandler.handle(new RBSException("Expected status code 200, but got "+response.code()));
                 } catch (IOException e) {
                     Log.w(TAG, e);
                 }

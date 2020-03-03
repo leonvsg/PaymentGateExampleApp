@@ -15,7 +15,6 @@ public class Constants {
     public enum PaymentGates {
 
         ALFABANK("https://web.rbsuat.com/ab", "UAT AB", "alfabank"),
-        SBERBANK("https://3dsec.sberbank.ru/payment", "UAT SBRF", "sberbank"),
         OTHER("", "Другое", "rbs");
 
         private String uri;

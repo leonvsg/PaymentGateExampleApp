@@ -216,26 +216,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void handleRegisterOrder(RegisterOrderResponseModel response){
-        if (response == null) {
-            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.",
-                    "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
-            setButtonClickable(true);
-            loadDialog.dismiss();
-            return;
-        }
-        mLogRecyclerView.post(()->addLogEntry( "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
-        if (response.getOrderId() == null) {
-            mLogRecyclerView.post(()->Toast.makeText(getApplicationContext(), "Ошибка регистрации заказа: "+response.getErrorMessage(), Toast.LENGTH_LONG).show());
-            setButtonClickable(true);
-            loadDialog.dismiss();
-        } else {
-            mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
-                    "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublicKeysUrl()));
-            rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
-        }
-    }
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -291,6 +271,26 @@ public class MainActivity extends Activity {
                 setButtonClickable(true);
                 loadDialog.dismiss();
                 break;
+        }
+    }
+
+    private void handleRegisterOrder(RegisterOrderResponseModel response){
+        if (response == null) {
+            mLogRecyclerView.post(()->addLogEntry("Нет ответа от платежного шлюза, или код HTTP ответа не 200.",
+                    "Проверьте корректность адреса шлюза, его доступность или наличие интернета на устройстве"));
+            setButtonClickable(true);
+            loadDialog.dismiss();
+            return;
+        }
+        mLogRecyclerView.post(()->addLogEntry( "Ответ метода регистрации заказа в платежном шлюзе", response.toString()));
+        if (response.getOrderId() == null) {
+            mLogRecyclerView.post(()->Toast.makeText(getApplicationContext(), "Ошибка регистрации заказа: "+response.getErrorMessage(), Toast.LENGTH_LONG).show());
+            setButtonClickable(true);
+            loadDialog.dismiss();
+        } else {
+            mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
+                    "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublicKeysUrl()));
+            rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
         }
     }
 
