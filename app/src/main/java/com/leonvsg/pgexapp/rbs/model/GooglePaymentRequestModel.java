@@ -4,9 +4,13 @@ import com.leonvsg.pgexapp.rbs.Constants;
 
 import lombok.Getter;
 import lombok.ToString;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 
 @ToString
-public class GooglePaymentRequestModel {
+public class GooglePaymentRequestModel implements RequestModel {
+
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json");
 
     @Getter private String merchant;
     @Getter private String orderNumber;
@@ -22,5 +26,13 @@ public class GooglePaymentRequestModel {
         this.amount = amount;
         this.returnUrl = Constants.RETURN_URL;
         this.currencyCode = Constants.CURRENCY_CODE;
+    }
+
+    @Override
+    public RequestBody getRequestBody() {
+        String json = String.format(
+                "{\"merchant\":\"%s\",\"orderNumber\":\"%s\",\"returnUrl\":\"%s\",\"paymentToken\":\"%s\",\"amount\":\"%s\",\"currencyCode\":%d}",
+                merchant, orderNumber, returnUrl, paymentToken, amount, currencyCode);
+        return RequestBody.create(json, JSON_MEDIA_TYPE);
     }
 }
