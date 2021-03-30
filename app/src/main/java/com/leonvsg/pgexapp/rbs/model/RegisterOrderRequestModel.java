@@ -1,7 +1,6 @@
 package com.leonvsg.pgexapp.rbs.model;
 
 import com.leonvsg.pgexapp.rbs.Constants;
-
 import lombok.Getter;
 import lombok.ToString;
 import okhttp3.FormBody;
@@ -15,13 +14,15 @@ public class RegisterOrderRequestModel implements RequestModel {
     @Getter private String password;
     @Getter private String orderNumber;
     @Getter private String returnUrl;
+    @Getter private Integer currency;
 
-    public RegisterOrderRequestModel(String amount, String userName, String password, String orderNumber) {
+    public RegisterOrderRequestModel(String amount, String userName, String password, String orderNumber, Integer currency) {
         this.amount = amount;
         this.userName = userName;
         this.password = password;
         this.orderNumber = orderNumber;
         this.returnUrl = Constants.RETURN_URL;
+        this.currency = currency;
     }
 
     @Override
@@ -32,6 +33,7 @@ public class RegisterOrderRequestModel implements RequestModel {
                 .add("password", password)
                 .add("returnUrl", returnUrl)
                 .add("amount", amount)
+                .add("currency", currency.toString())
                 .build();
     }
 }

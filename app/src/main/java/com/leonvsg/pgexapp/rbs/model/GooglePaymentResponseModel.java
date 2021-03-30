@@ -2,8 +2,7 @@ package com.leonvsg.pgexapp.rbs.model;
 
 import lombok.Data;
 
-public @Data
-class GooglePaymentResponseModel {
+public @Data class GooglePaymentResponseModel {
 
     private boolean success;
     private Data data;

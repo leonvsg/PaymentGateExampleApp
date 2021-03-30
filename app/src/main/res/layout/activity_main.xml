@@ -64,66 +64,185 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/padding_small">
 
-            <Spinner
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/paymentgates"
-                android:layout_gravity="center"
-                android:layout_marginBottom="15dp"
-                android:layout_marginTop="15dp"
-                android:layout_marginLeft="5dp"/>
-
-            <EditText
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/new_paymentgate_input"
-                android:hint="Введите адрес шлюза"
-                android:text="http://web.rbsuat.com/ab_by"
-                android:inputType="textUri"
-                android:visibility="gone"
-                android:layout_marginRight="5dp"/>
+                android:orientation="horizontal"
+                android:paddingBottom="15dp"
+                android:paddingTop="15dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Шлюз:"
+                    android:padding="@dimen/padding_small"/>
+
+                <Spinner
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/paymentgates"
+                    android:layout_gravity="center"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/currencies_layout"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Валюта:"
+                        android:padding="@dimen/padding_small"/>
+
+                    <Spinner
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/currencies"
+                        android:layout_gravity="center"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:id="@+id/paymentgate_settings"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="URL:"
+                        android:padding="@dimen/padding_small"/>
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/new_paymentgate_input"
+                        android:hint="Введите адрес шлюза"
+                        android:text="http://web.rbsuat.com/ab_by"
+                        android:inputType="textUri"
+                        android:layout_marginRight="5dp"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="GooglePay gatewayId:"
+                        android:padding="@dimen/padding_small"/>
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/new_gpay_gateway_input"
+                        android:hint="Введите gatewayId"
+                        android:text="rbs"
+                        android:layout_marginRight="5dp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="@dimen/padding_small">
+            android:padding="@dimen/padding_small"
+            android:orientation="horizontal"
+            android:gravity="center">
 
             <Button
-                android:layout_width="160dp"
-                android:layout_height="48dp"
-                android:id="@+id/cardpay_button"
-                android:text="Оплатить картой"
-                android:textColor="@color/textColor"
-                android:background="@drawable/googlepay_button_background"/>
-
-
-            <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center">
+                android:id="@+id/se_token_pay_button"
+                android:text="Оплатить через SDK"
+                android:textColor="@color/textColor"
+                android:background="@drawable/googlepay_button_background"
+                android:padding="10dp"/>
 
-                <include
-                    android:id="@+id/googlepay_button"
-                    layout="@layout/buy_with_googlepay_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:visibility="gone"/>
-
-                <TextView
-                    android:id="@+id/googlepay_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:text="@string/googlepay_status_checking"/>
-
-            </FrameLayout>
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/card_pay_button"
+                android:text="Оплатить картой на ПС"
+                android:textColor="@color/textColor"
+                android:background="@drawable/googlepay_button_background"
+                android:padding="10dp"/>
 
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/padding_small"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/redirect_to_payment_page_button"
+                android:text="Перейти на ПС"
+                android:textColor="@color/textColor"
+                android:background="@drawable/googlepay_button_background"
+                android:padding="10dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:hint="Укажите адрес страницы"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/payment_page_uri" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="10dp">
+
+            <include
+                android:id="@+id/googlepay_button"
+                layout="@layout/buy_with_googlepay_button"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp" />
+
+            <TextView
+                android:id="@+id/googlepay_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:visibility="gone"
+                android:text="@string/googlepay_status_checking"/>
+
+        </FrameLayout>
 
         <FrameLayout
             android:layout_width="match_parent"

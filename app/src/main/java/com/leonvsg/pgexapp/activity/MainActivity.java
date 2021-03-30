@@ -3,6 +3,7 @@ package com.leonvsg.pgexapp.activity;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -59,17 +60,26 @@ public class MainActivity extends Activity {
     private LogAdapter logAdapter;
     private GPayClient gPayClient;
     private RBSClient rbsClient;
-    private List<String> pgs;
-    private Constants.PaymentGates[] paymentgates = Constants.PaymentGates.values();
-    @BindView(R.id.paymentgates) Spinner mPaymentgateSpinner;
+    private List<String> paymentGateNames;
+    private List<String> currencyCharCodes;
+    private Constants.PaymentGates[] paymentGates = Constants.PaymentGates.values();
+    private Constants.Currencies[] currencies = Constants.Currencies.values();
+    @BindView(R.id.paymentgates) Spinner mPaymentGateSpinner;
     @BindView(R.id.googlepay_button) View mGooglePayButton;
     @BindView(R.id.googlepay_status) TextView mGooglePayStatusText;
     @BindView(R.id.merchant_login) EditText mMerchantInput;
     @BindView(R.id.api_password) EditText mPasswordInput;
     @BindView(R.id.amount) EditText mAmountInput;
     @BindView(R.id.new_paymentgate_input) EditText mPaymentGateURIInput;
-    @BindView(R.id.cardpay_button) Button mCardPayButton;
+    @BindView(R.id.se_token_pay_button) Button mSeTokenPayButton;
     @BindView(R.id.log_recycler) RecyclerView mLogRecyclerView;
+    @BindView(R.id.card_pay_button) Button mCardPayButton;
+    @BindView(R.id.currencies_layout) View mCurrenciesLayout;
+    @BindView(R.id.currencies) Spinner mCurrenciesSpinner;
+    @BindView(R.id.paymentgate_settings) View mPaymentgateSettingsLayout;
+    @BindView(R.id.new_gpay_gateway_input) EditText mGooglePayGatewayInput;
+    @BindView(R.id.redirect_to_payment_page_button) Button mRedirectToPaymentPageButton;
+    @BindView(R.id.payment_page_uri) EditText mPaymentPageUri;
     private Dialog loadDialog;
 
     @Override
@@ -97,21 +107,30 @@ public class MainActivity extends Activity {
     }
 
     private void initSpinner() {
-        pgs = new ArrayList<>();
-        Arrays.stream(paymentgates).forEach(value->pgs.add(value.getName()));
+        paymentGateNames = new ArrayList<>();
+        currencyCharCodes = new ArrayList<>();
+        Arrays.stream(paymentGates).forEach(value-> paymentGateNames.add(value.getName()));
+        Arrays.stream(currencies).forEach(currency->currencyCharCodes.add(currency.name()));
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, pgs);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mPaymentgateSpinner.setAdapter(adapter);
+        ArrayAdapter<String> paymentGateAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, paymentGateNames);
+        paymentGateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mPaymentGateSpinner.setAdapter(paymentGateAdapter);
+
+        ArrayAdapter<String> currencyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, currencyCharCodes);
+        currencyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mCurrenciesSpinner.setAdapter(currencyAdapter);
     }
 
     @OnItemSelected(R.id.paymentgates)
     void onSpinnerItemSelected(int position){
-        if (position == paymentgates.length-1) {
-            mPaymentGateURIInput.setVisibility(View.VISIBLE);
+        if (position == paymentGates.length-1) {
+            mPaymentgateSettingsLayout.setVisibility(View.VISIBLE);
+            mCurrenciesLayout.setVisibility(View.VISIBLE);
         } else {
-            mPaymentGateURIInput.setText(paymentgates[position].getURI());
-            mPaymentGateURIInput.setVisibility(View.GONE);
+            mPaymentGateURIInput.setText(paymentGates[position].getURI());
+            mGooglePayGatewayInput.setText(paymentGates[position].getGooglePayGatewayId());
+            mPaymentgateSettingsLayout.setVisibility(View.GONE);
+            mCurrenciesLayout.setVisibility(View.GONE);
         }
     }
 
@@ -158,15 +177,16 @@ public class MainActivity extends Activity {
     }
 
     private void setButtonClickable(boolean clickable) {
-        mCardPayButton.setClickable(clickable);
+        mSeTokenPayButton.setClickable(clickable);
         mGooglePayButton.setClickable(clickable);
+        mCardPayButton.setClickable(clickable);
     }
 
     private void addLogEntry(String header, String text) {
         logAdapter.setItem(new LogEntry(new Date(), header, text));
     }
 
-    @OnClick({R.id.cardpay_button, R.id.googlepay_button})
+    @OnClick({R.id.se_token_pay_button, R.id.googlepay_button, R.id.card_pay_button})
     void requestPayment(View view) {
         setButtonClickable(false);
         clearFocus();
@@ -178,32 +198,38 @@ public class MainActivity extends Activity {
 
         loadDialog.show();
 
-        Constants.PaymentGates paymentGate = Constants.PaymentGates.values()[mPaymentgateSpinner.getSelectedItemPosition()];
+        Constants.PaymentGates paymentGate = Constants.PaymentGates.values()[mPaymentGateSpinner.getSelectedItemPosition()];
         String orderNumber = Long.toString(new Date().getTime());
         String merchantLogin = mMerchantInput.getText().toString();
         String password = mPasswordInput.getText().toString();
         String amount = mAmountInput.getText().toString();
+        Integer currency = currencies[mCurrenciesSpinner.getSelectedItemPosition()].getCode();
 
-        if (mPaymentgateSpinner.getSelectedItemPosition() == paymentgates.length-1) {
+        if (mPaymentGateSpinner.getSelectedItemPosition() == paymentGates.length-1) {
             rbsClient = new RBSClient(paymentGate, orderNumber, merchantLogin, password, amount,
-                    mPaymentGateURIInput.getText().toString());
+                    mPaymentGateURIInput.getText().toString(), currency);
         } else {
-            rbsClient = new RBSClient(paymentGate, orderNumber, merchantLogin, password, amount);
+            rbsClient = new RBSClient(paymentGate, orderNumber, merchantLogin, password, amount, currency);
         }
 
         switch (view.getId()) {
             case R.id.googlepay_button:
                 runGooglePayment();
                 break;
-            case R.id.cardpay_button:
+            case R.id.se_token_pay_button:
+                rbsClient.setSeTokenPayment(true);
+                runCardPayment();
+                break;
+            case R.id.card_pay_button:
+                rbsClient.setSeTokenPayment(false);
                 runCardPayment();
                 break;
         }
     }
 
     private void runGooglePayment() {
-        JSONObject paymentDataRequest = gPayClient.loadPaymentData(rbsClient.getPaymentGate().getGPayGatewayId(),
-                rbsClient.getMerchantLogin(), rbsClient.getAmount(), LOAD_PAYMENT_DATA_RESULT_CODE);
+        JSONObject paymentDataRequest = gPayClient.loadPaymentData(mGooglePayGatewayInput.getText().toString(),
+                rbsClient.getMerchantLogin(), rbsClient.getAmount(), currencies[mCurrenciesSpinner.getSelectedItemPosition()].name(), LOAD_PAYMENT_DATA_RESULT_CODE);
         addLogEntry("Запрос в Google на получение токена (paymentDataRequest)", paymentDataRequest.toString());
     }
 
@@ -246,10 +272,11 @@ public class MainActivity extends Activity {
                 break;
             case CARD_FORM_RESULT_CODE:
                 if(data != null && data.hasExtra(CardChooserActivity.EXTRA_RESULT))  {
-                    String cryptogram = new String(data.getByteArrayExtra(CardChooserActivity.EXTRA_RESULT));
-                    cryptogram = cryptogram.replace("\n", "");
-                    addLogEntry("От SDK получена криптограмма", cryptogram);
-                    rbsClient.paymentOrder(cryptogram, this::handlePaymentOrder, this::handleException);
+                    byte[] cryptogram = data.getByteArrayExtra(CardChooserActivity.EXTRA_RESULT);
+                    String seToken = new String(cryptogram);
+                    seToken = seToken.replace("\n", "");
+                    addLogEntry("От SDK получена криптограмма", seToken);
+                    rbsClient.paymentOrder(seToken, this::handlePaymentOrder, this::handleException);
                     addLogEntry("Оплачиваем заказ в платежном шлюзе",
                             rbsClient.getPaymentOrderRequest() + "; URL: " + rbsClient.getPaymentOrderUrl());
                 }
@@ -288,9 +315,16 @@ public class MainActivity extends Activity {
             setButtonClickable(true);
             loadDialog.dismiss();
         } else {
-            mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
-                    "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublicKeysUrl()));
-            rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
+            if (rbsClient.isSeTokenPayment()) {
+                mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на форму ввода карточных данных",
+                        "Адрес публичного ключа для формирования seToken: "+rbsClient.getSePublicKeysUrl()));
+                rbsClient.redirectToCardForm(this, CARD_FORM_RESULT_CODE);
+            }
+            else {
+                mLogRecyclerView.post(()->addLogEntry( "Производим переадресацию на платежную страницу",
+                        "Адрес ПС: "+rbsClient.getRegisterOrderResponse().getFormUrl()));
+                rbsClient.redirectToPaymentPage(this, WEB_VIEW_RESULT_CODE);
+            }
         }
     }
 
@@ -375,5 +409,13 @@ public class MainActivity extends Activity {
         if (sendIntent.resolveActivity(getPackageManager()) != null) {
             startActivity(chooser);
         }
+    }
+
+    @OnClick(R.id.redirect_to_payment_page_button)
+    void redirectToPaymentPage(){
+        String uri = mPaymentPageUri.getText().toString();
+        Intent intent = new Intent(this, WebViewActivity.class);
+        intent.setData(Uri.parse(uri));
+        startActivityForResult(intent, 999);
     }
 }

@@ -17,21 +17,21 @@ public class GooglePaymentRequestModel implements RequestModel {
     @Getter private String returnUrl;
     @Getter private String paymentToken;
     @Getter private String amount;
-    @Getter private Integer currencyCode;
+    @Getter private String currencyCode;
 
-    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, String amount) {
+    public GooglePaymentRequestModel(String merchant, String orderNumber, String paymentToken, String amount, Integer currency) {
         this.merchant = merchant;
         this.orderNumber = orderNumber;
         this.paymentToken = paymentToken;
         this.amount = amount;
         this.returnUrl = Constants.RETURN_URL;
-        this.currencyCode = Constants.CURRENCY_CODE;
+        this.currencyCode = currency.toString();
     }
 
     @Override
     public RequestBody getRequestBody() {
         String json = String.format(
-                "{\"merchant\":\"%s\",\"orderNumber\":\"%s\",\"returnUrl\":\"%s\",\"paymentToken\":\"%s\",\"amount\":\"%s\",\"currencyCode\":%d}",
+                "{\"merchant\":\"%s\",\"orderNumber\":\"%s\",\"returnUrl\":\"%s\",\"paymentToken\":\"%s\",\"amount\":\"%s\",\"currencyCode\":%s}",
                 merchant, orderNumber, returnUrl, paymentToken, amount, currencyCode);
         return RequestBody.create(json, JSON_MEDIA_TYPE);
     }

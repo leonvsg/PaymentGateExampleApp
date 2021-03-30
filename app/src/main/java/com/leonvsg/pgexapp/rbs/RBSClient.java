@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 import lombok.Getter;
+import lombok.Setter;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -42,6 +43,7 @@ public class RBSClient {
     @Getter private String password;
     @Getter private String amount;
     @Getter private String mdOrder;
+    @Getter private Integer currency;
     @Getter private Constants.PaymentGates paymentGate;
 
     @Getter private String registerOrderUrl;
@@ -59,15 +61,17 @@ public class RBSClient {
     @Getter private GetOrderStatusExtendedRequestModel getOrderStatusExtendedRequest;
     @Getter private GetOrderStatusExtendedResponseModel getOrderStatusExtendedResponse;
 
+    @Getter @Setter private boolean isSeTokenPayment;
+
     private RBSClient() {
         httpClient = new OkHttpClient();
     }
 
-    public RBSClient(Constants.PaymentGates paymentGate, String orderNumber, String merchantLogin, String password, String amount) {
-        this(paymentGate, orderNumber, merchantLogin, password, amount, paymentGate.getURI());
+    public RBSClient(Constants.PaymentGates paymentGate, String orderNumber, String merchantLogin, String password, String amount, Integer currency) {
+        this(paymentGate, orderNumber, merchantLogin, password, amount, paymentGate.getURI(), currency);
     }
 
-    public RBSClient(Constants.PaymentGates paymentGate, String orderNumber, String merchantLogin, String password, String amount, String paymentGateURI) {
+    public RBSClient(Constants.PaymentGates paymentGate, String orderNumber, String merchantLogin, String password, String amount, String paymentGateURI, Integer currency) {
         this();
         this.orderNumber = orderNumber;
         this.merchantLogin = merchantLogin;
@@ -76,6 +80,7 @@ public class RBSClient {
         this.apiUserNameLogin = merchantLogin+"-api";
         this.paymentGate = paymentGate;
         this.paymentGateURI = paymentGateURI;
+        this.currency = currency;
         registerOrderUrl = paymentGateURI+Constants.REGISTER_ORDER_URL_END;
         paymentOrderUrl = paymentGateURI+Constants.CARD_PAYMENT_URL_END;
         googlePaymentUrl = paymentGateURI+Constants.GOOGLE_PAY_PAYMENT_URL_END;
@@ -92,7 +97,7 @@ public class RBSClient {
     }
 
     public void registerOrder(Callback<RegisterOrderResponseModel> callback, ExceptionHandler exceptionHandler) {
-        registerOrderRequest = new RegisterOrderRequestModel(amount, apiUserNameLogin, password, orderNumber);
+        registerOrderRequest = new RegisterOrderRequestModel(amount, apiUserNameLogin, password, orderNumber, currency);
         executeRequest(registerOrderRequest, registerOrderUrl, (response)->{
             registerOrderResponse = JSON.parseObject(response.body().string(), RegisterOrderResponseModel.class);
             mdOrder = registerOrderResponse.getOrderId();
@@ -109,7 +114,7 @@ public class RBSClient {
     }
 
     public void googlePayment(String paymentToken, Callback<GooglePaymentResponseModel> callback, ExceptionHandler exceptionHandler){
-        googlePaymentRequest = new GooglePaymentRequestModel(merchantLogin, orderNumber, paymentToken, amount);
+        googlePaymentRequest = new GooglePaymentRequestModel(merchantLogin, orderNumber, paymentToken, amount, currency);
         executeRequest(googlePaymentRequest, googlePaymentUrl, (response)->{
             googlePaymentResponse = JSON.parseObject(response.body().string(), GooglePaymentResponseModel.class);
             if (googlePaymentResponse.getData() != null) mdOrder = googlePaymentResponse.getData().getOrderId();
@@ -126,14 +131,22 @@ public class RBSClient {
     }
 
     public void redirectToAcs(Activity context, int resultCode){
+        redirectToWebView(context, resultCode, getACSRedirectUrl(mdOrder));
+    }
+
+    public void redirectToPaymentPage (Activity context, int resultCode){
+        redirectToWebView(context, resultCode, registerOrderResponse.getFormUrl());
+    }
+
+    private void redirectToWebView (Activity context, int resultCode, String redirectUri){
         Intent intent = new Intent(context, WebViewActivity.class);
-        intent.setData(Uri.parse(getACSRedirectUrl(mdOrder)));
+        intent.setData(Uri.parse(redirectUri));
         context.startActivityForResult(intent, resultCode);
     }
 
     public void redirectToCardForm(Activity context, int resultCode){
         Intent intent = new Intent(context, CardChooserActivity.class);
-        intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, paymentGateURI+Constants.SE_PUBLIC_KEY_URL_END);
+        intent.putExtra(CardChooserActivity.EXTRA_PUBLIC_KEY, paymentGateURI+sePublicKeysUrl);
         intent.putExtra(CardChooserActivity.EXTRA_MD_ORDER, mdOrder);
         intent.putExtra(CardChooserActivity.EXTRA_FINISH_BTN_TEXT, "Оплатить");
         context.startActivityForResult(intent, resultCode);

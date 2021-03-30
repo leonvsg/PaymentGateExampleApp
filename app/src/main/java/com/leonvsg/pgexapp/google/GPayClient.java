@@ -38,8 +38,8 @@ public class GPayClient {
         task.addOnCompleteListener(activity, listener);
     }
 
-    public JSONObject loadPaymentData(String gateway, String gatewayMerchantId, String price, int resultCode) {
-        Optional<JSONObject> paymentDataRequestJson = PaymentsUtil.getPaymentDataRequest(price, gateway, gatewayMerchantId);
+    public JSONObject loadPaymentData(String gateway, String gatewayMerchantId, String price, String currencyCode, int resultCode) {
+        Optional<JSONObject> paymentDataRequestJson = PaymentsUtil.getPaymentDataRequest(price, gateway, gatewayMerchantId, currencyCode);
         if (!paymentDataRequestJson.isPresent()) {
             return paymentDataRequestJson.get();
         }

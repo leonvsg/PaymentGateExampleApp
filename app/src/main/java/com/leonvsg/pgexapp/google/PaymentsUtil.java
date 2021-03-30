@@ -18,7 +18,7 @@ public class PaymentsUtil {
 
     public static PaymentsClient createPaymentsClient(Activity activity) {
         Wallet.WalletOptions walletOptions =
-                new Wallet.WalletOptions.Builder().setEnvironment(Constants.PAYMENTS_ENVIRONMENT).build();
+                new Wallet.WalletOptions.Builder().setEnvironment(Constants.PAYMENT_ENVIRONMENT).build();
         return Wallet.getPaymentsClient(activity, walletOptions);
     }
 
@@ -75,13 +75,12 @@ public class PaymentsUtil {
         }
     }
 
-    private static JSONObject getTransactionInfo(String price) throws JSONException {
+    private static JSONObject getTransactionInfo(String price, String currencyCode) throws JSONException {
         JSONObject transactionInfo = new JSONObject();
         transactionInfo.put("totalPrice", price);
         transactionInfo.put("totalPriceStatus", "FINAL");
         transactionInfo.put("countryCode", Constants.COUNTRY_CODE);
-        transactionInfo.put("currencyCode", Constants.CURRENCY_CODE);
-
+        transactionInfo.put("currencyCode", currencyCode);
         return transactionInfo;
     }
 
@@ -89,12 +88,12 @@ public class PaymentsUtil {
         return new JSONObject().put("merchantName", "Example Merchant");
     }
 
-    public static Optional<JSONObject> getPaymentDataRequest(String price, String gateway, String gatewayMerchantId) {
+    public static Optional<JSONObject> getPaymentDataRequest(String price, String gateway, String gatewayMerchantId, String currencyCode) {
         try {
             JSONObject paymentDataRequest = PaymentsUtil.getBaseRequest();
             paymentDataRequest.put(
                     "allowedPaymentMethods", new JSONArray().put(PaymentsUtil.getCardPaymentMethod(gateway, gatewayMerchantId)));
-            paymentDataRequest.put("transactionInfo", PaymentsUtil.getTransactionInfo(price));
+            paymentDataRequest.put("transactionInfo", PaymentsUtil.getTransactionInfo(price, currencyCode));
             paymentDataRequest.put("merchantInfo", PaymentsUtil.getMerchantInfo());
 
             return Optional.of(paymentDataRequest);
