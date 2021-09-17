@@ -35,7 +35,7 @@ public class RBSClient {
 
     private static final String TAG = "RBSCLIENT";
 
-    private OkHttpClient httpClient;
+    private final OkHttpClient httpClient;
     @Getter private String paymentGateURI;
     @Getter private String orderNumber;
     @Getter private String merchantLogin;

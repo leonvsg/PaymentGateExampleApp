@@ -62,8 +62,8 @@ public class MainActivity extends Activity {
     private RBSClient rbsClient;
     private List<String> paymentGateNames;
     private List<String> currencyCharCodes;
-    private Constants.PaymentGates[] paymentGates = Constants.PaymentGates.values();
-    private Constants.Currencies[] currencies = Constants.Currencies.values();
+    private final Constants.PaymentGates[] paymentGates = Constants.PaymentGates.values();
+    private final Constants.Currencies[] currencies = Constants.Currencies.values();
     @BindView(R.id.paymentgates) Spinner mPaymentGateSpinner;
     @BindView(R.id.googlepay_button) View mGooglePayButton;
     @BindView(R.id.googlepay_status) TextView mGooglePayStatusText;
@@ -279,6 +279,10 @@ public class MainActivity extends Activity {
                     rbsClient.paymentOrder(seToken, this::handlePaymentOrder, this::handleException);
                     addLogEntry("Оплачиваем заказ в платежном шлюзе",
                             rbsClient.getPaymentOrderRequest() + "; URL: " + rbsClient.getPaymentOrderUrl());
+                } else {
+                    Log.w("rbs sdk error", "Not recieved cryptogram from RBS SDK");
+                    addLogEntry("От SDK не получена криптограмма", "");
+                    loadDialog.dismiss();
                 }
                 break;
             case WEB_VIEW_RESULT_CODE:
@@ -406,9 +410,7 @@ public class MainActivity extends Activity {
         Intent chooser = Intent.createChooser(sendIntent, "Отправить лог");
         sendIntent.putExtra(Intent.EXTRA_TEXT, TextUtils.join("\r\n", logAdapter.getAll()));
         sendIntent.setType("text/plain");
-        if (sendIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(chooser);
-        }
+        if (sendIntent.resolveActivity(getPackageManager()) != null) startActivity(chooser);
     }
 
     @OnClick(R.id.redirect_to_payment_page_button)
